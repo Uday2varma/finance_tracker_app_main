@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart, LineChart } from 'react-native-svg-charts';
+import * as d3 from 'd3';
 import { useFinance, FilterOptions } from '@/contexts/FinanceContext';
 import { Calendar, Filter, TrendingUp, TrendingDown, Wallet } from 'lucide-react-native';
 import FilterModal from '@/components/FilterModal';
