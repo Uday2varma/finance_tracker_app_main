@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFinance, Category } from '@/contexts/FinanceContext';
 import { Plus, CreditCard as Edit3, Trash2, X } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 const colors = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', 
@@ -24,6 +26,11 @@ export default function Categories() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryName, setCategoryName] = useState('');
   const [selectedColor, setSelectedColor] = useState(colors[0]);
+
+  const scale = useSharedValue(1);
+  const animatedBtnStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const handleAddCategory = () => {
     setEditingCategory(null);
@@ -83,8 +90,23 @@ export default function Categories() {
   };
 
   function renderCategory({ item }: { item: Category }) {
+    // Choose a unique gradient for each category based on its color
+    const gradients: { [key: string]: string[] } = {
+      Food: ['#ffecd2', '#fcb69f', '#ff6b6b'],
+      Travel: ['#a1c4fd', '#c2e9fb', '#4ecdc4'],
+      Rent: ['#d4fc79', '#96e6a1', '#45b7d1'],
+      Salary: ['#fbc2eb', '#a6c1ee', '#96ceb4'],
+      Utilities: ['#f9d423', '#ff4e50', '#ffeaa7'],
+      Entertainment: ['#a18cd1', '#fbc2eb', '#dda0dd'],
+    };
+    const gradientColors: [string, string, string] = gradients[item.name] ? gradients[item.name] as [string, string, string] : ["#e0eafc", "#cfdef3", item.color];
     return (
-      <View style={styles.categoryCard}>
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.categoryCard, styles.cardShadow]}
+      >
         <View style={styles.categoryHeader}>
           <View style={styles.categoryLeft}>
             <View style={[styles.categoryColor, { backgroundColor: item.color }]} />
@@ -144,12 +166,12 @@ export default function Categories() {
             ) : null;
           })()}
         </View>
-      </View>
+      </LinearGradient>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#18181B' : '#F3F4F6' }}>
       <View style={[styles.gradientBg, darkMode ? styles.gradientBgDark : null]} />
       <FlatList
         data={categories}
@@ -159,8 +181,14 @@ export default function Categories() {
         ListHeaderComponent={null}
         showsVerticalScrollIndicator={false}
       />
-      <TouchableOpacity style={[styles.addButton, styles.animatedBtn]} activeOpacity={0.8} onPress={handleAddCategory}>
-        <Plus size={24} color="#fff" />
+      <TouchableOpacity
+        onPressIn={() => { scale.value = withSpring(0.95); }}
+        onPressOut={() => { scale.value = withSpring(1); }}
+        activeOpacity={0.8}
+      >
+        <Animated.View style={[styles.addButton, animatedBtnStyle]}>
+          <Plus size={24} color="#fff" />
+        </Animated.View>
       </TouchableOpacity>
       <Modal
         visible={showModal}
@@ -314,11 +342,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(99,102,241,0.08)',
     borderRadius: 18,
     marginBottom: 14,
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 3,
     borderWidth: 1,
     borderColor: '#A5B4FC',
   },

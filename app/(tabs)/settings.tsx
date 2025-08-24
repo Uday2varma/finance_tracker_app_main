@@ -3,15 +3,22 @@ import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Sun, Moon, Bell, Info, DollarSign, Palette, User } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 export default function SettingsScreen() {
   const { darkMode, setDarkMode } = useFinance();
+  const scale = useSharedValue(1);
+  const animatedToggleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#18181B' : '#F3F4F6' }}>
       <View style={[styles.gradientBg, darkMode ? styles.gradientBgDark : null]} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
         {/* User Profile Section */}
-  <View style={[styles.profileContainer, darkMode && styles.darkProfileContainer, styles.cardShadow]}>
+        <View style={[styles.profileContainer, darkMode && styles.darkProfileContainer, styles.cardShadow]}>
           <View style={styles.profileAvatar}><User size={36} color={darkMode ? '#F9A8D4' : '#6366F1'} /></View>
           <View>
             <Text style={[styles.profileName, darkMode && styles.darkText]}>Uday Kumar</Text>
@@ -20,8 +27,14 @@ export default function SettingsScreen() {
         </View>
         <Text style={[styles.title, darkMode && styles.darkTitle]}>Settings</Text>
         <View style={styles.toggleRow}>
-          <TouchableOpacity onPress={() => setDarkMode(!darkMode)} style={styles.toggleIcon}>
-            {darkMode ? <Moon size={24} color="#EC4899" /> : <Sun size={24} color="#6366F1" />}
+          <TouchableOpacity
+            onPressIn={() => { scale.value = withSpring(0.95); }}
+            onPressOut={() => { scale.value = withSpring(1); }}
+            style={styles.toggleIcon}
+          >
+            <Animated.View style={animatedToggleStyle}>
+              {darkMode ? <Moon size={24} color="#EC4899" /> : <Sun size={24} color="#6366F1" />}
+            </Animated.View>
           </TouchableOpacity>
           <Text style={[styles.toggleLabel, darkMode && styles.darkText]}>Dark Mode</Text>
           <Switch
@@ -32,28 +45,48 @@ export default function SettingsScreen() {
           />
         </View>
         <View style={[styles.cardRow]}>
-          <View style={[styles.card, darkMode && styles.darkCard, styles.cardShadow]}>
+          <LinearGradient
+            colors={['#FDE68A', '#EC4899', '#6366F1']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.card, styles.cardShadow]}
+          >
             <View style={styles.cardHeader}><DollarSign size={20} color={darkMode ? '#F9A8D4' : '#6366F1'} /><Text style={[styles.cardTitle, darkMode && styles.darkText]}>Change Currency</Text></View>
             <Text style={[styles.cardDesc, darkMode && styles.darkText]}>Switch between ₹, $, etc.</Text>
-          </View>
-          <View style={[styles.card, darkMode && styles.darkCard, styles.cardShadow]}>
+          </LinearGradient>
+          <LinearGradient
+            colors={['#FDE68A', '#EC4899', '#6366F1']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.card, styles.cardShadow]}
+          >
             <View style={styles.cardHeader}><Palette size={20} color={darkMode ? '#F9A8D4' : '#6366F1'} /><Text style={[styles.cardTitle, darkMode && styles.darkText]}>Theme</Text></View>
             <Text style={[styles.cardDesc, darkMode && styles.darkText]}>Light/Dark mode, accent colors</Text>
-          </View>
+          </LinearGradient>
         </View>
         <View style={[styles.cardRow]}>
-          <View style={[styles.card, darkMode && styles.darkCard, styles.cardShadow]}>
+          <LinearGradient
+            colors={['#FDE68A', '#EC4899', '#6366F1']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.card, styles.cardShadow]}
+          >
             <View style={styles.cardHeader}><Bell size={20} color={darkMode ? '#F9A8D4' : '#6366F1'} /><Text style={[styles.cardTitle, darkMode && styles.darkText]}>Notifications</Text></View>
             <Text style={[styles.cardDesc, darkMode && styles.darkText]}>Budget alerts, reminders</Text>
-          </View>
-          <View style={[styles.card, darkMode && styles.darkCard, styles.cardShadow]}>
+          </LinearGradient>
+          <LinearGradient
+            colors={['#FDE68A', '#EC4899', '#6366F1']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.card, styles.cardShadow]}
+          >
             <View style={styles.cardHeader}><Info size={20} color={darkMode ? '#F9A8D4' : '#6366F1'} /><Text style={[styles.cardTitle, darkMode && styles.darkText]}>About</Text></View>
             <Text style={[styles.cardDesc, darkMode && styles.darkText]}>App Version: 1.0.0
 Contact Support</Text>
-          </View>
+          </LinearGradient>
         </View>
       </ScrollView>
-  </SafeAreaView>
+    </SafeAreaView>
   );
 }
 

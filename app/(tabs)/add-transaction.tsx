@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Calendar, DollarSign, FileText, Tag, TrendingUp, TrendingDown } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 export default function AddTransaction() {
   const { addTransaction, categories, darkMode } = useFinance();
@@ -19,6 +21,11 @@ export default function AddTransaction() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const scale = useSharedValue(1);
+  const animatedBtnStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const handleSubmit = () => {
     if (!amount || !description || !selectedCategory) {
@@ -47,11 +54,16 @@ export default function AddTransaction() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#18181B' : '#F3F4F6' }}>
       <View style={[styles.gradientBg, darkMode ? styles.gradientBgDark : null]} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
         <Text style={[styles.title, darkMode ? styles.titleDark : null]}>Add Transaction</Text>
-        <View style={[styles.formCard, darkMode ? styles.formCardDark : null, styles.cardShadow]}>
+        <LinearGradient
+          colors={['#FDE68A', '#EC4899', '#6366F1']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.formCard, styles.cardShadow]}
+        >
           {/* Transaction Type Toggle */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, darkMode ? styles.sectionTitleDark : null]}>Transaction Type</Text>
@@ -159,13 +171,15 @@ export default function AddTransaction() {
           </View>
           {/* Submit Button */}
           <TouchableOpacity
-            style={[styles.submitButton, darkMode ? styles.submitButtonDark : null]}
+            onPressIn={() => { scale.value = withSpring(0.95); }}
+            onPressOut={() => { scale.value = withSpring(1); }}
             activeOpacity={0.8}
-            onPress={handleSubmit}
           >
-            <Text style={[styles.submitButtonText, darkMode ? styles.submitButtonTextDark : null]}>Add Transaction</Text>
+            <Animated.View style={[styles.submitButton, animatedBtnStyle]}>
+              <Text style={[styles.submitButtonText, darkMode ? styles.submitButtonTextDark : null]}>Add Transaction</Text>
+            </Animated.View>
           </TouchableOpacity>
-        </View>
+        </LinearGradient>
       </ScrollView>
   </SafeAreaView>
   );

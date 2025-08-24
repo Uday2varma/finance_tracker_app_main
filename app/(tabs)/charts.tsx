@@ -83,10 +83,10 @@ export default function ChartsScreen() {
   <Text style={[styles.panelTitle, darkMode ? styles.panelTitleDark : null]}>Expenses Over Time</Text>
         {/* Legend */}
         <View style={styles.legendAreaRow}>
-          <View style={styles.legendAreaItem}><View style={[styles.legendDot, { backgroundColor: '#3B82F6' }]} /><Text style={styles.legendLabel}>Food</Text></View>
-          <View style={styles.legendAreaItem}><View style={[styles.legendDot, { backgroundColor: '#F59E42' }]} /><Text style={styles.legendLabel}>Transport</Text></View>
-          <View style={styles.legendAreaItem}><View style={[styles.legendDot, { backgroundColor: '#60A5FA' }]} /><Text style={styles.legendLabel}>Shopping</Text></View>
-          <View style={styles.legendAreaItem}><View style={[styles.legendDot, { backgroundColor: '#10B981' }]} /><Text style={styles.legendLabel}>Bills</Text></View>
+          <View style={styles.legendAreaItem}><View style={[styles.legendDot, { backgroundColor: '#3B82F6' }]} /><Text style={[styles.legendLabel, darkMode ? { color: '#fff' } : null]}>Food</Text></View>
+          <View style={styles.legendAreaItem}><View style={[styles.legendDot, { backgroundColor: '#F59E42' }]} /><Text style={[styles.legendLabel, darkMode ? { color: '#fff' } : null]}>Transport</Text></View>
+          <View style={styles.legendAreaItem}><View style={[styles.legendDot, { backgroundColor: '#60A5FA' }]} /><Text style={[styles.legendLabel, darkMode ? { color: '#fff' } : null]}>Shopping</Text></View>
+          <View style={styles.legendAreaItem}><View style={[styles.legendDot, { backgroundColor: '#10B981' }]} /><Text style={[styles.legendLabel, darkMode ? { color: '#fff' } : null]}>Bills</Text></View>
         </View>
         <View style={{ height: 240 }}>
           {/* Food Line Chart */}
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     borderColor: '#6366F1',
   },
   legendLabelDark: {
-    color: '#A5B4FC',
+    color: '#fff',
   },
   legendValueDark: {
     color: '#A5B4FC',

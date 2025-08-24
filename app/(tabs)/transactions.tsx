@@ -11,6 +11,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFinance, FilterOptions, Transaction } from '@/contexts/FinanceContext';
 import { Filter, Trash2, CreditCard as Edit3 } from 'lucide-react-native';
 import FilterModal from '@/components/FilterModal';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 export default function Transactions() {
   const { transactions, categories, deleteTransaction, getFilteredTransactions, darkMode } = useFinance();
@@ -49,7 +51,12 @@ export default function Transactions() {
   };
 
   const renderTransaction = ({ item }: { item: Transaction }) => (
-    <View style={[styles.transactionCard, darkMode ? styles.transactionCardDark : null]}>
+    <LinearGradient
+      colors={['#FDE68A', '#EC4899', '#6366F1']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[styles.transactionCard, styles.cardShadow]}
+    >
       <View style={styles.transactionHeader}>
         <View style={styles.transactionLeft}>
           <View
@@ -85,7 +92,7 @@ export default function Transactions() {
           </View>
         </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 
   const renderEmptyState = () => (
@@ -113,8 +120,13 @@ export default function Transactions() {
     return activeFilters.length > 0 ? activeFilters.join(', ') : 'All transactions';
   };
 
+  const scale = useSharedValue(1);
+  const animatedBtnStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#18181B' : '#F3F4F6' }}>
       <View style={[styles.gradientBg, darkMode ? styles.gradientBgDark : null]} />
       <View style={styles.header}>
         <View>
@@ -124,10 +136,13 @@ export default function Transactions() {
           </Text>
         </View>
         <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setShowFilters(true)}
+          onPressIn={() => { scale.value = withSpring(0.95); }}
+          onPressOut={() => { scale.value = withSpring(1); }}
+          activeOpacity={0.8}
         >
-          <Filter size={20} color="#3B82F6" />
+          <Animated.View style={[styles.filterButton, animatedBtnStyle]}>
+            <Filter size={20} color="#3B82F6" />
+          </Animated.View>
         </TouchableOpacity>
       </View>
 
@@ -229,6 +244,16 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: '#F9A8D4',
+  },
+  cardShadow: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   transactionHeader: {
     flexDirection: 'row',
