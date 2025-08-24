@@ -10,10 +10,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFinance } from '@/contexts/FinanceContext';
-import { Calendar, DollarSign, FileText, Tag } from 'lucide-react-native';
+import { Calendar, DollarSign, FileText, Tag, TrendingUp, TrendingDown } from 'lucide-react-native';
 
 export default function AddTransaction() {
-  const { addTransaction, categories } = useFinance();
+  const { addTransaction, categories, darkMode } = useFinance();
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -25,13 +25,11 @@ export default function AddTransaction() {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-
     const numericAmount = parseFloat(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
       return;
     }
-
     addTransaction({
       amount: numericAmount,
       description,
@@ -39,196 +37,234 @@ export default function AddTransaction() {
       type: transactionType,
       date,
     });
-
     // Reset form
     setAmount('');
     setDescription('');
     setSelectedCategory('');
     setTransactionType('expense');
     setDate(new Date().toISOString().split('T')[0]);
-
     Alert.alert('Success', 'Transaction added successfully!');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Add Transaction</Text>
-
-        {/* Transaction Type Toggle */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Transaction Type</Text>
-          <View style={styles.typeToggle}>
-            <TouchableOpacity
-              style={[
-                styles.typeButton,
-                styles.typeButtonLeft,
-                transactionType === 'income' && styles.activeIncomeButton,
-              ]}
-              onPress={() => setTransactionType('income')}
-            >
-              <Text
-                style={[
-                  styles.typeButtonText,
-                  transactionType === 'income' && styles.activeIncomeText,
-                ]}
-              >
-                Income
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.typeButton,
-                styles.typeButtonRight,
-                transactionType === 'expense' && styles.activeExpenseButton,
-              ]}
-              onPress={() => setTransactionType('expense')}
-            >
-              <Text
-                style={[
-                  styles.typeButtonText,
-                  transactionType === 'expense' && styles.activeExpenseText,
-                ]}
-              >
-                Expense
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Amount Input */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Amount</Text>
-          <View style={styles.inputContainer}>
-            <DollarSign size={20} color="#6b7280" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="0.00"
-              keyboardType="numeric"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
-        </View>
-
-        {/* Description Input */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Description</Text>
-          <View style={styles.inputContainer}>
-            <FileText size={20} color="#6b7280" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Enter description"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
-        </View>
-
-        {/* Date Input */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Date</Text>
-          <View style={styles.inputContainer}>
-            <Calendar size={20} color="#6b7280" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              value={date}
-              onChangeText={setDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
-        </View>
-
-        {/* Category Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Category</Text>
-          <View style={styles.categoryGrid}>
-            {categories.map((category) => (
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={[styles.gradientBg, darkMode ? styles.gradientBgDark : null]} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+        <Text style={[styles.title, darkMode ? styles.titleDark : null]}>Add Transaction</Text>
+        <View style={[styles.formCard, darkMode ? styles.formCardDark : null, styles.cardShadow]}>
+          {/* Transaction Type Toggle */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, darkMode ? styles.sectionTitleDark : null]}>Transaction Type</Text>
+            <View style={[styles.typeToggle, darkMode ? styles.typeToggleDark : null]}>
               <TouchableOpacity
-                key={category.id}
                 style={[
-                  styles.categoryButton,
-                  selectedCategory === category.name && styles.selectedCategoryButton,
+                  styles.typeButton,
+                  styles.typeButtonLeft,
+                  transactionType === 'income' ? styles.activeIncomeButton : null,
+                  darkMode ? styles.typeButtonDark : null,
                 ]}
-                onPress={() => setSelectedCategory(category.name)}
+                onPress={() => setTransactionType('income')}
               >
-                <View
-                  style={[
-                    styles.categoryColor,
-                    { backgroundColor: category.color },
-                  ]}
-                />
+                <TrendingUp size={20} color={transactionType === 'income' ? '#10B981' : (darkMode ? '#A5B4FC' : '#6366F1')} />
                 <Text
                   style={[
-                    styles.categoryButtonText,
-                    selectedCategory === category.name && styles.selectedCategoryText,
+                    styles.typeButtonText,
+                    transactionType === 'income' ? styles.activeIncomeText : null,
+                    darkMode ? styles.typeButtonTextDark : null,
                   ]}
                 >
-                  {category.name}
+                  Income
                 </Text>
               </TouchableOpacity>
-            ))}
+              <TouchableOpacity
+                style={[
+                  styles.typeButton,
+                  styles.typeButtonRight,
+                  transactionType === 'expense' ? styles.activeExpenseButton : null,
+                  darkMode ? styles.typeButtonDark : null,
+                ]}
+                onPress={() => setTransactionType('expense')}
+              >
+                <TrendingDown size={20} color={transactionType === 'expense' ? '#EF4444' : (darkMode ? '#A5B4FC' : '#6366F1')} />
+                <Text
+                  style={[
+                    styles.typeButtonText,
+                    transactionType === 'expense' ? styles.activeExpenseText : null,
+                    darkMode ? styles.typeButtonTextDark : null,
+                  ]}
+                >
+                  Expense
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
+          {/* Amount Input */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, darkMode ? styles.sectionTitleDark : null]}>Amount</Text>
+            <View style={styles.inputRow}>
+              <DollarSign size={20} color={darkMode ? '#A5B4FC' : '#6366F1'} style={{ marginRight: 8 }} />
+              <TextInput
+                style={[styles.input, darkMode ? styles.inputDark : null]}
+                value={amount}
+                onChangeText={setAmount}
+                placeholder="Enter amount"
+                keyboardType="numeric"
+                placeholderTextColor={darkMode ? '#A5B4FC' : '#9ca3af'}
+              />
+            </View>
+          </View>
+          {/* Description Input */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, darkMode ? styles.sectionTitleDark : null]}>Description</Text>
+            <View style={styles.inputRow}>
+              <FileText size={20} color={darkMode ? '#A5B4FC' : '#6366F1'} style={{ marginRight: 8 }} />
+              <TextInput
+                style={[styles.input, darkMode ? styles.inputDark : null]}
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Enter description"
+                placeholderTextColor={darkMode ? '#A5B4FC' : '#9ca3af'}
+              />
+            </View>
+          </View>
+          {/* Category Picker */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, darkMode ? styles.sectionTitleDark : null]}>Category</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[styles.categoryOption, selectedCategory === category.name ? styles.activeCategoryOption : null, darkMode ? styles.categoryOptionDark : null]}
+                  onPress={() => setSelectedCategory(category.name)}
+                >
+                  <View style={[styles.categoryColor, { backgroundColor: category.color }]} />
+                  <Text style={[styles.categoryText, selectedCategory === category.name ? styles.activeCategoryText : null, darkMode ? styles.categoryTextDark : null]}>{category.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+          {/* Date Input */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, darkMode ? styles.sectionTitleDark : null]}>Date</Text>
+            <View style={styles.inputRow}>
+              <Calendar size={20} color={darkMode ? '#A5B4FC' : '#6366F1'} style={{ marginRight: 8 }} />
+              <TextInput
+                style={[styles.input, darkMode ? styles.inputDark : null]}
+                value={date}
+                onChangeText={setDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={darkMode ? '#A5B4FC' : '#9ca3af'}
+              />
+            </View>
+          </View>
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={[styles.submitButton, darkMode ? styles.submitButtonDark : null]}
+            activeOpacity={0.8}
+            onPress={handleSubmit}
+          >
+            <Text style={[styles.submitButtonText, darkMode ? styles.submitButtonTextDark : null]}>Add Transaction</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Submit Button */}
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Add Transaction</Text>
-        </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+  </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientBg: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1,
+    backgroundColor: 'transparent',
+    // Simulate a vibrant gradient with multiple colors
+    // Use Expo LinearGradient for real gradient, here fallback to layered colors
+    backgroundImage: 'linear-gradient(135deg, #6366F1 0%, #EC4899 50%, #FDE68A 100%)',
+    opacity: 0.9,
+  },
+  gradientBgDark: {
+    backgroundImage: 'linear-gradient(135deg, #18181B 0%, #6366F1 60%, #EC4899 100%)',
+    opacity: 0.95,
+  },
+  cardShadow: {
+    shadowColor: '#EC4899',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 8,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#fff',
+    paddingTop: 16,
+    paddingHorizontal: 16,
+  },
+  containerDark: {
+    backgroundColor: '#18181B',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1f2937',
-    textAlign: 'center',
-    marginVertical: 20,
+    color: '#6366F1',
+    marginBottom: 18,
+    alignSelf: 'center',
+    letterSpacing: 1,
+    textShadowColor: '#A5B4FC',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  titleDark: {
+    color: '#A5B4FC',
+    textShadowColor: '#6366F1',
+  },
+  formCard: {
+  backgroundColor: 'rgba(255,255,255,0.85)',
+  borderRadius: 28,
+  padding: 28,
+  marginBottom: 18,
+  },
+  formCardDark: {
+  backgroundColor: 'rgba(24,24,27,0.92)',
+  shadowColor: '#A5B4FC',
   },
   section: {
-    marginBottom: 24,
-    paddingHorizontal: 20,
+    marginBottom: 18,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 12,
+    fontWeight: 'bold',
+    color: '#6366F1',
+    marginBottom: 8,
+  },
+  sectionTitleDark: {
+    color: '#A5B4FC',
   },
   typeToggle: {
     flexDirection: 'row',
-    backgroundColor: '#e5e7eb',
-    borderRadius: 12,
+    backgroundColor: '#E0E7FF',
+    borderRadius: 14,
     overflow: 'hidden',
+  },
+  typeToggleDark: {
+    backgroundColor: '#27272A',
   },
   typeButton: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  typeButtonDark: {
+    backgroundColor: '#18181B',
   },
   typeButtonLeft: {
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
+    borderTopLeftRadius: 14,
+    borderBottomLeftRadius: 14,
   },
   typeButtonRight: {
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-  },
-  typeButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6b7280',
+    borderTopRightRadius: 14,
+    borderBottomRightRadius: 14,
   },
   activeIncomeButton: {
     backgroundColor: '#10B981',
@@ -236,55 +272,67 @@ const styles = StyleSheet.create({
   activeExpenseButton: {
     backgroundColor: '#EF4444',
   },
+  typeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6366F1',
+    marginLeft: 8,
+  },
+  typeButtonTextDark: {
+    color: '#A5B4FC',
+  },
   activeIncomeText: {
     color: 'white',
+    fontWeight: 'bold',
   },
   activeExpenseText: {
     color: 'white',
+    fontWeight: 'bold',
   },
-  inputContainer: {
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 1,
   },
-  inputIcon: {
-    marginRight: 12,
+  inputDark: {
+    backgroundColor: '#18181B',
+    color: '#A5B4FC',
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: '#1f2937',
-    paddingVertical: 12,
+    fontSize: 15,
+    color: '#374151',
+    paddingLeft: 4,
   },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -4,
+  categoryScroll: {
+    marginVertical: 8,
   },
-  categoryButton: {
+  categoryOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(99,102,241,0.08)',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    margin: 4,
+    marginRight: 8,
     borderWidth: 2,
-    borderColor: '#e5e7eb',
+    borderColor: '#A5B4FC',
   },
-  selectedCategoryButton: {
-    borderColor: '#3B82F6',
-    backgroundColor: '#eff6ff',
+  categoryOptionDark: {
+    backgroundColor: '#18181B',
+    borderColor: '#A5B4FC',
+  },
+  activeCategoryOption: {
+    borderColor: '#EC4899',
+    backgroundColor: '#FCE7F3',
   },
   categoryColor: {
     width: 12,
@@ -292,31 +340,45 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 8,
   },
-  categoryButtonText: {
+  categoryText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6b7280',
+    color: '#6366F1',
   },
-  selectedCategoryText: {
-    color: '#3B82F6',
-    fontWeight: '600',
+  categoryTextDark: {
+    color: '#A5B4FC',
+  },
+  activeCategoryText: {
+    color: '#EC4899',
+    fontWeight: 'bold',
   },
   submitButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 12,
-    paddingVertical: 16,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+  backgroundColor: '#EC4899',
+  borderRadius: 18,
+  paddingVertical: 18,
+  alignItems: 'center',
+  marginTop: 18,
+  shadowColor: '#EC4899',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.18,
+  shadowRadius: 16,
+  elevation: 6,
+  },
+  submitButtonDark: {
+  backgroundColor: '#6366F1',
   },
   submitButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  color: 'white',
+  fontSize: 20,
+  fontWeight: 'bold',
+  letterSpacing: 1.5,
+  textTransform: 'uppercase',
+  textShadowColor: '#FDE68A',
+  textShadowOffset: { width: 0, height: 2 },
+  textShadowRadius: 8,
+  },
+  submitButtonTextDark: {
+  color: '#FDE68A',
+  textShadowColor: '#EC4899',
   },
 });

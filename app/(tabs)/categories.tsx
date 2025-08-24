@@ -19,7 +19,7 @@ const colors = [
 ];
 
 export default function Categories() {
-  const { categories, addCategory, updateCategory, deleteCategory } = useFinance();
+  const { categories, addCategory, updateCategory, deleteCategory, setBudget, getBudget, getCategoryUsage, darkMode } = useFinance();
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryName, setCategoryName] = useState('');
@@ -43,12 +43,26 @@ export default function Categories() {
     setShowModal(true);
   };
 
-  const handleSaveCategory = () => {
-    if (!categoryName.trim()) {
-      Alert.alert('Error', 'Please enter a category name');
+  const handleDeleteCategory = (category: Category) => {
+    if (category.isDefault) {
+      Alert.alert('Cannot Delete', 'Default categories cannot be deleted');
       return;
     }
+    Alert.alert(
+      'Delete Category',
+      `Are you sure you want to delete "${category.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteCategory(category.id) },
+      ]
+    );
+  };
 
+  const handleSaveCategory = () => {
+    if (!categoryName.trim()) {
+      Alert.alert('Validation Error', 'Category name cannot be empty');
+      return;
+    }
     if (editingCategory) {
       updateCategory(editingCategory.id, {
         name: categoryName.trim(),
@@ -62,202 +76,251 @@ export default function Categories() {
         isDefault: false,
       });
     }
-
     setShowModal(false);
     setCategoryName('');
     setSelectedColor(colors[0]);
     setEditingCategory(null);
   };
 
-  const handleDeleteCategory = (category: Category) => {
-    if (category.isDefault) {
-      Alert.alert('Cannot Delete', 'Default categories cannot be deleted');
-      return;
-    }
-
-    Alert.alert(
-      'Delete Category',
-      `Are you sure you want to delete "${category.name}"? All transactions using this category will be moved to the "Food" category.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deleteCategory(category.id),
-        },
-      ]
-    );
-  };
-
-  const renderCategory = ({ item }: { item: Category }) => (
-    <View style={styles.categoryCard}>
-      <View style={styles.categoryHeader}>
-        <View style={styles.categoryLeft}>
-          <View
-            style={[styles.categoryColor, { backgroundColor: item.color }]}
-          />
-          <View style={styles.categoryInfo}>
-            <Text style={styles.categoryName}>{item.name}</Text>
-            <Text style={styles.categoryType}>
-              {item.isDefault ? 'Default Category' : 'Custom Category'}
-            </Text>
+  function renderCategory({ item }: { item: Category }) {
+    return (
+      <View style={styles.categoryCard}>
+        <View style={styles.categoryHeader}>
+          <View style={styles.categoryLeft}>
+            <View style={[styles.categoryColor, { backgroundColor: item.color }]} />
+            <View style={styles.categoryInfo}>
+              <Text style={styles.categoryName}>{item.name}</Text>
+              <Text style={styles.categoryType}>
+                {item.isDefault ? 'Default Category' : 'Custom Category'}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.categoryActions}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.editButton]}
+              onPress={() => handleEditCategory(item)}
+              disabled={item.isDefault}
+            >
+              <Edit3 size={16} color={item.isDefault ? '#9ca3af' : '#3B82F6'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={() => handleDeleteCategory(item)}
+              disabled={item.isDefault}
+            >
+              <Trash2 size={16} color={item.isDefault ? '#9ca3af' : '#EF4444'} />
+            </TouchableOpacity>
           </View>
         </View>
-        <View style={styles.categoryActions}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.editButton]}
-            onPress={() => handleEditCategory(item)}
-            disabled={item.isDefault}
-          >
-            <Edit3 size={16} color={item.isDefault ? '#9ca3af' : '#3B82F6'} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.deleteButton]}
-            onPress={() => handleDeleteCategory(item)}
-            disabled={item.isDefault}
-          >
-            <Trash2 size={16} color={item.isDefault ? '#9ca3af' : '#EF4444'} />
-          </TouchableOpacity>
+        {/* Budget Section */}
+        <View style={styles.budgetSection}>
+          <Text style={styles.budgetLabel}>Budget (₹):</Text>
+          <TextInput
+            style={styles.budgetInput}
+            keyboardType="numeric"
+            value={getBudget(item.name)?.toString() || ''}
+            onChangeText={text => {
+              const val = Number(text);
+              if (!isNaN(val) && val >= 0) setBudget(item.name, val);
+            }}
+            placeholder="Set budget"
+            placeholderTextColor="#9ca3af"
+          />
+          <View style={styles.progressRow}>
+            <View style={styles.progressBarOuter}>
+              <View style={[styles.progressBarInner, {
+                width: `${Math.min(getCategoryUsage(item.name) / (getBudget(item.name) || 1), 1) * 100}%`,
+                backgroundColor: item.color
+              }]} />
+            </View>
+            <Text style={styles.progressText}>
+              ₹{getCategoryUsage(item.name)} / ₹{getBudget(item.name) || 0}
+            </Text>
+          </View>
+          {(() => {
+            const budget = getBudget(item.name);
+            return typeof budget === 'number' && budget > 0 && getCategoryUsage(item.name) > budget ? (
+              <Text style={styles.alertText}>Over budget!</Text>
+            ) : null;
+          })()}
         </View>
       </View>
-    </View>
-  );
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Categories</Text>
-          <Text style={styles.subtitle}>
-            {categories.length} categories • {categories.filter(c => !c.isDefault).length} custom
-          </Text>
-        </View>
-        <TouchableOpacity style={styles.addButton} onPress={handleAddCategory}>
-          <Plus size={20} color="white" />
-        </TouchableOpacity>
-      </View>
-
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={[styles.gradientBg, darkMode ? styles.gradientBgDark : null]} />
       <FlatList
         data={categories}
         renderItem={renderCategory}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={null}
         showsVerticalScrollIndicator={false}
       />
-
-      {/* Add/Edit Category Modal */}
+      <TouchableOpacity style={[styles.addButton, styles.animatedBtn]} activeOpacity={0.8} onPress={handleAddCategory}>
+        <Plus size={24} color="#fff" />
+      </TouchableOpacity>
       <Modal
         visible={showModal}
         animationType="slide"
-        presentationStyle="pageSheet"
+        transparent
         onRequestClose={() => setShowModal(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowModal(false)}
-            >
-              <X size={24} color="#6b7280" />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>
-              {editingCategory ? 'Edit Category' : 'Add Category'}
-            </Text>
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleSaveCategory}
-            >
-              <Text style={styles.saveButtonText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.modalContent}>
-            <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Category Name</Text>
-              <TextInput
-                style={styles.textInput}
-                value={categoryName}
-                onChangeText={setCategoryName}
-                placeholder="Enter category name"
-                placeholderTextColor="#9ca3af"
-              />
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, darkMode ? styles.modalCardDark : null, styles.cardShadow]}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowModal(false)}
+              >
+                <X size={24} color="#6b7280" />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>
+                {editingCategory ? 'Edit Category' : 'Add Category'}
+              </Text>
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSaveCategory}
+              >
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
             </View>
-
-            <View style={styles.colorSection}>
-              <Text style={styles.inputLabel}>Color</Text>
-              <View style={styles.colorGrid}>
-                {colors.map((color) => (
-                  <TouchableOpacity
-                    key={color}
-                    style={[
-                      styles.colorOption,
-                      { backgroundColor: color },
-                      selectedColor === color && styles.selectedColorOption,
-                    ]}
-                    onPress={() => setSelectedColor(color)}
-                  />
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.previewSection}>
-              <Text style={styles.inputLabel}>Preview</Text>
-              <View style={styles.previewCard}>
-                <View
-                  style={[styles.categoryColor, { backgroundColor: selectedColor }]}
+            <View style={styles.modalContent}>
+              <View style={styles.inputSection}>
+                <Text style={styles.inputLabel}>Category Name</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={categoryName}
+                  onChangeText={setCategoryName}
+                  placeholder="Enter category name"
+                  placeholderTextColor="#9ca3af"
                 />
-                <Text style={styles.previewText}>
-                  {categoryName || 'Category Name'}
-                </Text>
+              </View>
+              <View style={styles.colorSection}>
+                <Text style={styles.inputLabel}>Color</Text>
+                <View style={styles.colorGrid}>
+                  {colors.map((color) => (
+                    <TouchableOpacity
+                      key={color}
+                      style={[
+                        styles.colorOption,
+                        { backgroundColor: color },
+                        selectedColor === color && styles.selectedColorOption,
+                      ]}
+                      onPress={() => setSelectedColor(color)}
+                    />
+                  ))}
+                </View>
+              </View>
+              <View style={styles.previewSection}>
+                <Text style={styles.inputLabel}>Preview</Text>
+                <View style={styles.previewCard}>
+                  <View
+                    style={[styles.categoryColor, { backgroundColor: selectedColor }]}
+                  />
+                  <Text style={styles.previewText}>
+                    {categoryName || 'Category Name'}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
-        </SafeAreaView>
+        </View>
       </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
+  gradientBg: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1,
+    backgroundColor: 'transparent',
+    // Simulate gradient with a light accent color
+    opacity: 0.9,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  gradientBgDark: {
+    backgroundColor: '#18181B',
+    opacity: 0.95,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1f2937',
+  cardShadow: {
+    shadowColor: '#EC4899',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 8,
   },
-  subtitle: {
+  animatedBtn: {
+    transform: [{ scale: 1 }],
+  },
+  budgetSection: {
+    marginTop: 10,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+  },
+  budgetLabel: {
     fontSize: 14,
-    color: '#6b7280',
-    marginTop: 4,
+    color: '#6366F1',
+    fontWeight: '600',
+    marginBottom: 4,
   },
-  addButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 20,
-    padding: 10,
+  budgetInput: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 14,
+    color: '#1f2937',
+    marginBottom: 6,
+    width: 120,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  progressBarOuter: {
+    flex: 1,
+    height: 6,
+    backgroundColor: '#E0E7FF',
+    borderRadius: 3,
+    marginRight: 8,
+    overflow: 'hidden',
+  },
+  progressBarInner: {
+    height: 6,
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 13,
+    color: '#374151',
+    fontWeight: '600',
+  },
+  alertText: {
+    color: '#EF4444',
+    fontWeight: 'bold',
+    fontSize: 13,
+    marginTop: 2,
   },
   listContainer: {
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
   categoryCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: 'rgba(99,102,241,0.08)',
+    borderRadius: 18,
+    marginBottom: 14,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#A5B4FC',
   },
   categoryHeader: {
     flexDirection: 'row',
@@ -280,10 +343,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   categoryName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#6366F1',
     marginBottom: 4,
+    letterSpacing: 0.5,
   },
   categoryType: {
     fontSize: 14,
@@ -303,17 +367,32 @@ const styles = StyleSheet.create({
   deleteButton: {
     backgroundColor: '#fef2f2',
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCard: {
+    width: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 20,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  modalCardDark: {
+    backgroundColor: '#23232A',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: 'white',
+    paddingHorizontal: 4,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
@@ -338,11 +417,11 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingHorizontal: 4,
+    paddingTop: 12,
   },
   inputSection: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   inputLabel: {
     fontSize: 16,
@@ -361,7 +440,7 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
   },
   colorSection: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   colorGrid: {
     flexDirection: 'row',
@@ -380,7 +459,7 @@ const styles = StyleSheet.create({
     borderColor: '#3B82F6',
   },
   previewSection: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   previewCard: {
     flexDirection: 'row',
@@ -395,5 +474,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#1f2937',
+  },
+  addButton: {
+    position: 'absolute',
+    right: 24,
+    bottom: 32,
+    backgroundColor: '#3B82F6',
+    borderRadius: 28,
+    padding: 16,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 6,
   },
 });

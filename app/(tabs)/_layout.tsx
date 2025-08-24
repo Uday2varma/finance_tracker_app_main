@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { ChartBar as BarChart3, CirclePlus as PlusCircle, Settings, Chrome as Home } from 'lucide-react-native';
+import { ChartBar as BarChart3, PieChart as PieChartIcon, CirclePlus as PlusCircle, Settings, Chrome as Home, Tag } from 'lucide-react-native';
 import { View } from 'react-native';
 
 export default function TabLayout() {
@@ -64,6 +64,24 @@ export default function TabLayout() {
         name="categories"
         options={{
           title: 'Categories',
+          tabBarIcon: ({ size, color }) => (
+            <Tag size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="charts"
+        options={{
+          title: 'Charts',
+          tabBarIcon: ({ size, color }) => (
+            <PieChartIcon size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
           tabBarIcon: ({ size, color }) => (
             <Settings size={size} color={color} />
           ),

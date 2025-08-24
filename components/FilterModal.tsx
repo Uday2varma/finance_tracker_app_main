@@ -167,6 +167,47 @@ export default function FilterModal({
               </View>
             </View>
           </View>
+
+          {/* Amount Range Filter */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Amount Range</Text>
+            <View style={styles.amountInputs}>
+              <View style={styles.amountInputContainer}>
+                <Text style={styles.amountLabel}>Min</Text>
+                <TextInput
+                  style={styles.amountInput}
+                  value={tempFilters.minAmount ? String(tempFilters.minAmount) : ''}
+                  onChangeText={value => updateFilter('minAmount', value ? Number(value) : undefined)}
+                  placeholder="0"
+                  placeholderTextColor="#9ca3af"
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={styles.amountInputContainer}>
+                <Text style={styles.amountLabel}>Max</Text>
+                <TextInput
+                  style={styles.amountInput}
+                  value={tempFilters.maxAmount ? String(tempFilters.maxAmount) : ''}
+                  onChangeText={value => updateFilter('maxAmount', value ? Number(value) : undefined)}
+                  placeholder="Any"
+                  placeholderTextColor="#9ca3af"
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Notes/Description Search */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Notes/Description</Text>
+            <TextInput
+              style={styles.notesInput}
+              value={tempFilters.notes || ''}
+              onChangeText={value => updateFilter('notes', value)}
+              placeholder="Search notes or description..."
+              placeholderTextColor="#9ca3af"
+            />
+          </View>
         </ScrollView>
 
         <View style={styles.footer}>
@@ -182,32 +223,33 @@ export default function FilterModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'rgba(99,102,241,0.10)',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: 'white',
+    paddingVertical: 18,
+    backgroundColor: 'rgba(236,72,153,0.08)',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#EC4899',
   },
   closeButton: {
     padding: 4,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#EC4899',
+    letterSpacing: 1,
   },
   clearButton: {
     padding: 4,
   },
   clearButtonText: {
     fontSize: 16,
-    color: '#EF4444',
+    color: '#6366F1',
     fontWeight: '600',
   },
   content: {
@@ -221,13 +263,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#6366F1',
     marginBottom: 12,
+    letterSpacing: 0.5,
   },
   typeOptions: {
     flexDirection: 'row',
-    backgroundColor: '#e5e7eb',
-    borderRadius: 12,
+    backgroundColor: '#E0E7FF',
+    borderRadius: 14,
     overflow: 'hidden',
   },
   typeOption: {
@@ -237,15 +280,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTypeOption: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#EC4899',
   },
   typeOptionText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#6b7280',
+    color: '#6366F1',
   },
   activeTypeOptionText: {
     color: 'white',
+    fontWeight: 'bold',
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -255,17 +299,17 @@ const styles = StyleSheet.create({
   categoryOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(99,102,241,0.08)',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
     margin: 4,
     borderWidth: 2,
-    borderColor: '#e5e7eb',
+    borderColor: '#A5B4FC',
   },
   activeCategoryOption: {
-    borderColor: '#3B82F6',
-    backgroundColor: '#eff6ff',
+    borderColor: '#EC4899',
+    backgroundColor: '#FCE7F3',
   },
   categoryColor: {
     width: 12,
@@ -276,11 +320,11 @@ const styles = StyleSheet.create({
   categoryOptionText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6b7280',
+    color: '#6366F1',
   },
   activeCategoryOptionText: {
-    color: '#3B82F6',
-    fontWeight: '600',
+    color: '#EC4899',
+    fontWeight: 'bold',
   },
   dateInputs: {
     flexDirection: 'row',
@@ -293,35 +337,77 @@ const styles = StyleSheet.create({
   dateLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: '#6366F1',
     marginBottom: 8,
   },
   dateInput: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(236,72,153,0.08)',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
-    color: '#1f2937',
+    color: '#EC4899',
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#EC4899',
+  },
+  amountInputs: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  amountInputContainer: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  amountLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6366F1',
+    marginBottom: 8,
+  },
+  amountInput: {
+    backgroundColor: 'rgba(236,72,153,0.08)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#EC4899',
+    borderWidth: 1,
+    borderColor: '#EC4899',
+    marginBottom: 8,
+  },
+  notesInput: {
+    backgroundColor: 'rgba(236,72,153,0.08)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#EC4899',
+    borderWidth: 1,
+    borderColor: '#EC4899',
+    marginBottom: 8,
   },
   footer: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: 'white',
+    paddingVertical: 18,
+    backgroundColor: 'rgba(99,102,241,0.08)',
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: '#6366F1',
   },
   applyButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: '#EC4899',
+    borderRadius: 14,
+    paddingVertical: 18,
     alignItems: 'center',
+    shadowColor: '#EC4899',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 3,
   },
   applyButtonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+    letterSpacing: 1,
   },
 });

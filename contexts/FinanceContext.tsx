@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface Transaction {
   id: string;
@@ -16,7 +16,23 @@ export interface Category {
   isDefault: boolean;
 }
 
+export interface RecurringTransaction {
+  id: string;
+  amount: number;
+  description: string;
+  category: string;
+  type: 'income' | 'expense';
+  frequency: 'monthly' | 'weekly' | 'yearly';
+  nextDate: string; // ISO date string
+}
+
 interface FinanceContextType {
+  darkMode: boolean;
+  setDarkMode: (value: boolean) => void;
+  savingsGoals: { [goalName: string]: { target: number; saved: number } };
+  setSavingsGoal: (goalName: string, target: number) => void;
+  addToSavings: (goalName: string, amount: number) => void;
+  getSavingsProgress: (goalName: string) => number;
   transactions: Transaction[];
   categories: Category[];
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
@@ -26,6 +42,16 @@ interface FinanceContextType {
   updateCategory: (id: string, category: Omit<Category, 'id'>) => void;
   deleteCategory: (id: string) => void;
   getFilteredTransactions: (filters: FilterOptions) => Transaction[];
+  budgets: { [category: string]: number };
+  setBudget: (category: string, amount: number) => void;
+  getBudget: (category: string) => number | undefined;
+  getCategoryUsage: (category: string) => number;
+  recurringTransactions: RecurringTransaction[];
+  addRecurringTransaction: (rt: Omit<RecurringTransaction, 'id'>) => void;
+  updateRecurringTransaction: (id: string, rt: Omit<RecurringTransaction, 'id'>) => void;
+  deleteRecurringTransaction: (id: string) => void;
+  getSuggestions: () => string[];
+  predictExpenses: () => { [category: string]: number };
 }
 
 export interface FilterOptions {
@@ -33,6 +59,9 @@ export interface FilterOptions {
   endDate?: string;
   category?: string;
   type?: 'income' | 'expense' | 'all';
+  minAmount?: number;
+  maxAmount?: number;
+  notes?: string;
 }
 
 const defaultCategories: Category[] = [
@@ -82,8 +111,47 @@ const sampleTransactions: Transaction[] = [
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
+  const [darkMode, setDarkMode] = useState(false);
+  const [savingsGoals, setSavingsGoals] = useState<{ [goalName: string]: { target: number; saved: number } }>({});
+
+  const setSavingsGoal = (goalName: string, target: number) => {
+    setSavingsGoals(prev => ({
+      ...prev,
+      [goalName]: { target, saved: prev[goalName]?.saved || 0 }
+    }));
+  };
+
+  const addToSavings = (goalName: string, amount: number) => {
+    setSavingsGoals(prev => {
+      const goal = prev[goalName] || { target: 0, saved: 0 };
+      return {
+        ...prev,
+        [goalName]: { ...goal, saved: goal.saved + amount }
+      };
+    });
+  };
+
+  const getSavingsProgress = (goalName: string) => {
+    const goal = savingsGoals[goalName];
+    if (!goal || goal.target === 0) return 0;
+    return Math.min(goal.saved / goal.target, 1);
+  };
   const [transactions, setTransactions] = useState<Transaction[]>(sampleTransactions);
   const [categories, setCategories] = useState<Category[]>(defaultCategories);
+  const [budgets, setBudgets] = useState<{ [category: string]: number }>({});
+  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
+
+  const setBudget = (category: string, amount: number) => {
+    setBudgets(prev => ({ ...prev, [category]: amount }));
+  };
+
+  const getBudget = (category: string) => budgets[category];
+
+  const getCategoryUsage = (category: string) => {
+    return transactions
+      .filter(t => t.category === category && t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+  };
 
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
     const newTransaction = {
@@ -139,25 +207,116 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const getFilteredTransactions = (filters: FilterOptions): Transaction[] => {
     return transactions.filter(transaction => {
       const transactionDate = new Date(transaction.date);
-      
       if (filters.startDate && transactionDate < new Date(filters.startDate)) {
         return false;
       }
-      
       if (filters.endDate && transactionDate > new Date(filters.endDate)) {
         return false;
       }
-      
       if (filters.category && transaction.category !== filters.category) {
         return false;
       }
-      
       if (filters.type && filters.type !== 'all' && transaction.type !== filters.type) {
         return false;
       }
-      
+      if (filters.minAmount !== undefined && transaction.amount < filters.minAmount) {
+        return false;
+      }
+      if (filters.maxAmount !== undefined && transaction.amount > filters.maxAmount) {
+        return false;
+      }
+      if (filters.notes && !transaction.description.toLowerCase().includes(filters.notes.toLowerCase())) {
+        return false;
+      }
       return true;
     });
+  };
+
+  // Add a recurring transaction
+  const addRecurringTransaction = (rt: Omit<RecurringTransaction, 'id'>) => {
+    const newRT = { ...rt, id: Date.now().toString() };
+    setRecurringTransactions(prev => [...prev, newRT]);
+  };
+
+  // Update a recurring transaction
+  const updateRecurringTransaction = (id: string, rt: Omit<RecurringTransaction, 'id'>) => {
+    setRecurringTransactions(prev => prev.map(r => r.id === id ? { ...rt, id } : r));
+  };
+
+  // Delete a recurring transaction
+  const deleteRecurringTransaction = (id: string) => {
+    setRecurringTransactions(prev => prev.filter(r => r.id !== id));
+  };
+
+  // Auto-add due recurring transactions on mount (and daily)
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    setRecurringTransactions(prev => {
+      let updated = [...prev];
+      prev.forEach(rt => {
+        if (rt.nextDate <= today) {
+          // Add to transactions
+          addTransaction({
+            amount: rt.amount,
+            date: rt.nextDate,
+            description: rt.description,
+            category: rt.category,
+            type: rt.type,
+          });
+          // Calculate next date
+          let next = new Date(rt.nextDate);
+          if (rt.frequency === 'monthly') next.setMonth(next.getMonth() + 1);
+          if (rt.frequency === 'weekly') next.setDate(next.getDate() + 7);
+          if (rt.frequency === 'yearly') next.setFullYear(next.getFullYear() + 1);
+          rt.nextDate = next.toISOString().slice(0, 10);
+        }
+      });
+      return updated;
+    });
+  }, []);
+
+  // AI-powered suggestions based on spending patterns
+  const getSuggestions = () => {
+    const suggestions: string[] = [];
+    // Example: If food expense > 30% of total, suggest meal planning
+    const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    const foodExpense = transactions.filter(t => t.type === 'expense' && t.category === 'Food').reduce((sum, t) => sum + t.amount, 0);
+    if (totalExpense > 0 && foodExpense / totalExpense > 0.3) {
+      suggestions.push('Consider meal planning or cooking at home to reduce food expenses.');
+    }
+    // Example: If entertainment > 20%, suggest free activities
+    const entertainmentExpense = transactions.filter(t => t.type === 'expense' && t.category === 'Entertainment').reduce((sum, t) => sum + t.amount, 0);
+    if (totalExpense > 0 && entertainmentExpense / totalExpense > 0.2) {
+      suggestions.push('Try free or low-cost entertainment options to save more.');
+    }
+    // Example: If salary is high but savings low
+    const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    if (totalIncome > 0 && totalExpense / totalIncome > 0.8) {
+      suggestions.push('Set a monthly savings goal and automate transfers to savings.');
+    }
+    // Add more rules as needed
+    return suggestions;
+  };
+
+  // Expense prediction using simple average of last 3 months per category
+  const predictExpenses = () => {
+    const predictions: { [category: string]: number } = {};
+    const now = new Date();
+    const months: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(d.toISOString().slice(0, 7)); // YYYY-MM
+    }
+    categories.forEach(category => {
+      let monthlyTotals: number[] = [];
+      months.forEach(month => {
+        const monthTotal = transactions.filter(t => t.type === 'expense' && t.category === category.name && t.date.startsWith(month)).reduce((sum, t) => sum + t.amount, 0);
+        monthlyTotals.push(monthTotal);
+      });
+      const avg = monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length;
+      predictions[category.name] = Math.round(avg);
+    });
+    return predictions;
   };
 
   return (
@@ -172,6 +331,22 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         updateCategory,
         deleteCategory,
         getFilteredTransactions,
+        budgets,
+        setBudget,
+        getBudget,
+        getCategoryUsage,
+        savingsGoals,
+        setSavingsGoal,
+        addToSavings,
+        getSavingsProgress,
+        darkMode,
+        setDarkMode,
+        recurringTransactions,
+        addRecurringTransaction,
+        updateRecurringTransaction,
+        deleteRecurringTransaction,
+        getSuggestions,
+        predictExpenses,
       }}
     >
       {children}

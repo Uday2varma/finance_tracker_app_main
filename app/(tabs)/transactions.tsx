@@ -13,7 +13,7 @@ import { Filter, Trash2, CreditCard as Edit3 } from 'lucide-react-native';
 import FilterModal from '@/components/FilterModal';
 
 export default function Transactions() {
-  const { transactions, categories, deleteTransaction, getFilteredTransactions } = useFinance();
+  const { transactions, categories, deleteTransaction, getFilteredTransactions, darkMode } = useFinance();
   const [filters, setFilters] = useState<FilterOptions>({ type: 'all' });
   const [showFilters, setShowFilters] = useState(false);
 
@@ -49,7 +49,7 @@ export default function Transactions() {
   };
 
   const renderTransaction = ({ item }: { item: Transaction }) => (
-    <View style={styles.transactionCard}>
+    <View style={[styles.transactionCard, darkMode ? styles.transactionCardDark : null]}>
       <View style={styles.transactionHeader}>
         <View style={styles.transactionLeft}>
           <View
@@ -59,8 +59,8 @@ export default function Transactions() {
             ]}
           />
           <View style={styles.transactionInfo}>
-            <Text style={styles.transactionDescription}>{item.description}</Text>
-            <Text style={styles.transactionMeta}>
+            <Text style={[styles.transactionDescription, darkMode ? styles.transactionDescriptionDark : null]}>{item.description}</Text>
+            <Text style={[styles.transactionMeta, darkMode ? styles.transactionMetaDark : null]}>
               {item.category} • {formatDate(item.date)}
             </Text>
           </View>
@@ -69,10 +69,11 @@ export default function Transactions() {
           <Text
             style={[
               styles.transactionAmount,
+              darkMode ? styles.transactionAmountDark : null,
               { color: item.type === 'income' ? '#10B981' : '#EF4444' },
             ]}
           >
-            {item.type === 'income' ? '+' : '-'}${item.amount.toLocaleString()}
+            {item.type === 'income' ? '+' : '-'}₹{item.amount.toLocaleString()}
           </Text>
           <View style={styles.transactionActions}>
             <TouchableOpacity
@@ -113,7 +114,8 @@ export default function Transactions() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={[styles.gradientBg, darkMode ? styles.gradientBgDark : null]} />
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Transactions</Text>
@@ -144,14 +146,50 @@ export default function Transactions() {
         onApplyFilters={setFilters}
         onClose={() => setShowFilters(false)}
       />
-    </SafeAreaView>
+  </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  gradientBg: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1,
+    backgroundColor: 'transparent',
+    backgroundImage: 'linear-gradient(135deg, #6366F1 0%, #EC4899 50%, #FDE68A 100%)',
+    opacity: 0.9,
+  },
+  gradientBgDark: {
+    backgroundImage: 'linear-gradient(135deg, #18181B 0%, #6366F1 60%, #EC4899 100%)',
+    opacity: 0.95,
+  },
+  transactionCardDark: {
+    backgroundColor: '#18181B',
+    borderColor: '#6366F1',
+  },
+  transactionDescriptionDark: {
+    color: '#A5B4FC',
+  },
+  transactionMetaDark: {
+    color: '#A5B4FC',
+  },
+  transactionAmountDark: {
+    color: '#A5B4FC',
+  },
+  filterButton: {
+    backgroundColor: '#E0E7FF',
+    borderRadius: 8,
+    padding: 8,
+    marginLeft: 8,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#F9FAFB',
+    // Simulate gradient with a light accent color
   },
   header: {
     flexDirection: 'row',
@@ -161,18 +199,19 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#6366F1',
+    letterSpacing: 1,
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: 16,
+    color: '#6366F1',
     marginTop: 4,
-  },
-  filterButton: {
-    padding: 8,
-    borderRadius: 8,
+    fontWeight: '600',
+    letterSpacing: 0.5,
     backgroundColor: '#e0f2fe',
   },
   listContainer: {
@@ -180,14 +219,16 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   transactionCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: 'rgba(236,72,153,0.08)',
+    borderRadius: 18,
+    marginBottom: 14,
+    shadowColor: '#EC4899',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F9A8D4',
   },
   transactionHeader: {
     flexDirection: 'row',
@@ -210,22 +251,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   transactionDescription: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#6366F1',
     marginBottom: 4,
+    letterSpacing: 0.5,
   },
   transactionMeta: {
     fontSize: 14,
     color: '#6b7280',
   },
   transactionRight: {
+    flexDirection: 'column',
     alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   transactionAmount: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 8,
+    letterSpacing: 1,
   },
   transactionActions: {
     flexDirection: 'row',
