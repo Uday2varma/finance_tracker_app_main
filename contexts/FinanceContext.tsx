@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { auth, db } from '../components/firebaseConfig';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 
 export interface Transaction {
   id: string;
@@ -110,9 +113,67 @@ const sampleTransactions: Transaction[] = [
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
+
 export function FinanceProvider({ children }: { children: ReactNode }) {
   const [darkMode, setDarkMode] = useState(false);
   const [savingsGoals, setSavingsGoals] = useState<{ [goalName: string]: { target: number; saved: number } }>({});
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [budgets, setBudgets] = useState<{ [category: string]: number }>({});
+  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Load user data from Firestore on login
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUserId(user.uid);
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setTransactions(data.transactions || []);
+          setCategories(data.categories || defaultCategories);
+          setBudgets(data.budgets || {});
+          setSavingsGoals(data.savingsGoals || {});
+          setRecurringTransactions(data.recurringTransactions || []);
+        } else {
+          // If new user, set defaults
+          setTransactions([]);
+          setCategories(defaultCategories);
+          setBudgets({});
+          setSavingsGoals({});
+          setRecurringTransactions([]);
+          await setDoc(doc(db, 'users', user.uid), {
+            transactions: [],
+            categories: defaultCategories,
+            budgets: {},
+            savingsGoals: {},
+            recurringTransactions: [],
+          });
+        }
+      } else {
+        setUserId(null);
+        setTransactions([]);
+        setCategories([]);
+        setBudgets({});
+        setSavingsGoals({});
+        setRecurringTransactions([]);
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  // Save user data to Firestore when changed
+  useEffect(() => {
+    if (!userId) return;
+    updateDoc(doc(db, 'users', userId), {
+      transactions,
+      categories,
+      budgets,
+      savingsGoals,
+      recurringTransactions,
+    });
+  }, [transactions, categories, budgets, savingsGoals, recurringTransactions, userId]);
 
   const setSavingsGoal = (goalName: string, target: number) => {
     setSavingsGoals(prev => ({
@@ -136,10 +197,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     if (!goal || goal.target === 0) return 0;
     return Math.min(goal.saved / goal.target, 1);
   };
-  const [transactions, setTransactions] = useState<Transaction[]>(sampleTransactions);
-  const [categories, setCategories] = useState<Category[]>(defaultCategories);
-  const [budgets, setBudgets] = useState<{ [category: string]: number }>({});
-  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
 
   const setBudget = (category: string, amount: number) => {
     setBudgets(prev => ({ ...prev, [category]: amount }));
@@ -153,24 +210,53 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       .reduce((sum, t) => sum + t.amount, 0);
   };
 
-  const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
+
+  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
     const newTransaction = {
       ...transaction,
       id: Date.now().toString(),
     };
     setTransactions(prev => [newTransaction, ...prev]);
+    if (auth.currentUser) {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(userDocRef, {
+        transactions: arrayUnion(newTransaction)
+      });
+    }
   };
 
-  const updateTransaction = (id: string, updatedTransaction: Omit<Transaction, 'id'>) => {
+
+  const updateTransaction = async (id: string, updatedTransaction: Omit<Transaction, 'id'>) => {
     setTransactions(prev =>
       prev.map(transaction =>
         transaction.id === id ? { ...updatedTransaction, id } : transaction
       )
     );
+    if (auth.currentUser) {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      // Remove old transaction and add updated one
+      const oldTransaction = transactions.find(t => t.id === id);
+      if (oldTransaction) {
+        await updateDoc(userDocRef, {
+          transactions: arrayRemove(oldTransaction)
+        });
+      }
+      await updateDoc(userDocRef, {
+        transactions: arrayUnion({ ...updatedTransaction, id })
+      });
+    }
   };
 
-  const deleteTransaction = (id: string) => {
+
+  const deleteTransaction = async (id: string) => {
+    const toDelete = transactions.find(t => t.id === id);
     setTransactions(prev => prev.filter(transaction => transaction.id !== id));
+    if (auth.currentUser && toDelete) {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(userDocRef, {
+        transactions: arrayRemove(toDelete)
+      });
+    }
   };
 
   const addCategory = (category: Omit<Category, 'id'>) => {
