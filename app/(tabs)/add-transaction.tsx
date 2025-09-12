@@ -174,6 +174,7 @@ export default function AddTransaction() {
             onPressIn={() => { scale.value = withSpring(0.95); }}
             onPressOut={() => { scale.value = withSpring(1); }}
             activeOpacity={0.8}
+            onPress={handleSubmit}
           >
             <Animated.View style={[styles.submitButton, animatedBtnStyle]}>
               <Text style={[styles.submitButtonText, darkMode ? styles.submitButtonTextDark : null]}>Add Transaction</Text>

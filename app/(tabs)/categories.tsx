@@ -173,18 +173,34 @@ export default function Categories() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#18181B' : '#F3F4F6' }}>
       <View style={[styles.gradientBg, darkMode ? styles.gradientBgDark : null]} />
-      <FlatList
-        data={categories}
-        renderItem={renderCategory}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={null}
-        showsVerticalScrollIndicator={false}
-      />
+      {categories.length === 0 ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: darkMode ? '#A5B4FC' : '#6366F1', fontSize: 18, marginBottom: 16, textAlign: 'center' }}>
+            No categories found. Add your first category to get started!
+          </Text>
+          <TouchableOpacity
+            onPress={handleAddCategory}
+            style={{ backgroundColor: '#3B82F6', borderRadius: 24, padding: 16, marginTop: 8 }}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>+ Add Category</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={categories}
+          renderItem={renderCategory}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
+          ListHeaderComponent={null}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
       <TouchableOpacity
         onPressIn={() => { scale.value = withSpring(0.95); }}
         onPressOut={() => { scale.value = withSpring(1); }}
         activeOpacity={0.8}
+        onPress={handleAddCategory}
+        style={{ position: 'absolute', right: 24, bottom: 32 }}
       >
         <Animated.View style={[styles.addButton, animatedBtnStyle]}>
           <Plus size={24} color="#fff" />
@@ -196,8 +212,8 @@ export default function Categories() {
         transparent
         onRequestClose={() => setShowModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, darkMode ? styles.modalCardDark : null, styles.cardShadow]}>
+        <View style={[styles.modalOverlay, { zIndex: 1000 }]}> 
+          <View style={[styles.modalCard, darkMode ? styles.modalCardDark : null, styles.cardShadow, { alignSelf: 'center', marginTop: '30%', minHeight: 340 }]}> 
             <View style={styles.modalHeader}>
               <TouchableOpacity
                 style={styles.closeButton}
@@ -215,18 +231,22 @@ export default function Categories() {
                 <Text style={styles.saveButtonText}>Save</Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.modalContent}>
-              <View style={styles.inputSection}>
+            <View style={[styles.modalContent, { paddingBottom: 12 }]}> 
+              <View style={[styles.inputSection, { marginBottom: 10 }]}> 
                 <Text style={styles.inputLabel}>Category Name</Text>
                 <TextInput
-                  style={styles.textInput}
+                  style={[
+                    styles.textInput,
+                    { marginBottom: 16, zIndex: 2, backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#e5e7eb' }
+                  ]}
                   value={categoryName}
                   onChangeText={setCategoryName}
                   placeholder="Enter category name"
                   placeholderTextColor="#9ca3af"
+                  autoFocus
                 />
               </View>
-              <View style={styles.colorSection}>
+              <View style={[styles.colorSection, { marginBottom: 18, zIndex: 1 }]}> 
                 <Text style={styles.inputLabel}>Color</Text>
                 <View style={styles.colorGrid}>
                   {colors.map((color) => (
@@ -242,7 +262,7 @@ export default function Categories() {
                   ))}
                 </View>
               </View>
-              <View style={styles.previewSection}>
+              <View style={styles.previewSection}> 
                 <Text style={styles.inputLabel}>Preview</Text>
                 <View style={styles.previewCard}>
                   <View

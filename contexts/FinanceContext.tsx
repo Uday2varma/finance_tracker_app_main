@@ -219,9 +219,16 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setTransactions(prev => [newTransaction, ...prev]);
     if (auth.currentUser) {
       const userDocRef = doc(db, "users", auth.currentUser.uid);
-      await updateDoc(userDocRef, {
-        transactions: arrayUnion(newTransaction)
-      });
+      try {
+        await updateDoc(userDocRef, {
+          transactions: arrayUnion(newTransaction)
+        });
+      } catch (error) {
+        console.error('Failed to add transaction to Firestore:', error);
+        alert('Failed to add transaction. Please check your connection and permissions.');
+      }
+    } else {
+      alert('No user is logged in. Please log in again.');
     }
   };
 
@@ -259,12 +266,25 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addCategory = (category: Omit<Category, 'id'>) => {
+  const addCategory = async (category: Omit<Category, 'id'>) => {
     const newCategory = {
       ...category,
       id: Date.now().toString(),
     };
     setCategories(prev => [...prev, newCategory]);
+    if (auth.currentUser) {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      try {
+        await updateDoc(userDocRef, {
+          categories: arrayUnion(newCategory)
+        });
+      } catch (error) {
+        console.error('Failed to add category to Firestore:', error);
+        alert('Failed to add category. Please check your connection and permissions.');
+      }
+    } else {
+      alert('No user is logged in. Please log in again.');
+    }
   };
 
   const updateCategory = (id: string, updatedCategory: Omit<Category, 'id'>) => {
